@@ -6,31 +6,27 @@ class PlaylistsService {
   }
 
   async getPlaylistSongs(playlistId) {
-    const query = {
-      text: `SELECT p.id AS playlist_id, p.name AS playlist_name,
-            s.id AS song_id, s.title AS song_title, s.performer AS song_performer
-            FROM playlists p
-            LEFT JOIN playlist_songs ps ON p.id = ps.playlist_id
-            LEFT JOIN songs s ON ps.song_id = s.id
-            WHERE p.id = $1`,
+    const queryPlaylist = {
+      text: 'SELECT id, name FROM playlists WHERE id = $1',
       values: [playlistId],
     };
 
-    const result = await this._pool.query(query);
-
-    const playlist = {
-      id: result.rows[0].playlist_id,
-      name: result.rows[0].playlist_name,
-      songs: result.rows
-        .filter((row) => row.song_id !== null)
-        .map((row) => ({
-          id: row.song_id,
-          title: row.song_title,
-          performer: row.song_performer,
-        })),
+    const querySongs = {
+      text: `SELECT A.id, A.title, A.performer FROM songs A
+        JOIN playlist_songs B ON A.id = B.song_id
+        WHERE B.playlist_id = $1`,
+      values: [playlistId],
     };
 
-    return { playlist };
+    const resultPlaylist = await this._pool.query(queryPlaylist);
+    const resultSongs = await this._pool.query(querySongs);
+
+    return {
+      playlist: {
+        ...resultPlaylist.rows[0],
+        songs: resultSongs.rows,
+      },
+    };
   }
 }
 

@@ -1,9 +1,11 @@
+const autoBind = require('auto-bind');
+
 class Listener {
   constructor(PlaylistsService, MailSender) {
     this._playlistsService = PlaylistsService;
     this._mailSender = MailSender;
 
-    this.listen = this.listen.bind(this);
+    autoBind(this);
   }
 
   async listen(message) {
